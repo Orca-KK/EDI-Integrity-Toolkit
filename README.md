@@ -1,6 +1,6 @@
 # EDI Transaction Integrity Toolkit
 
-Free, open tools that help small and mid-sized manufacturers and distributors detect tampered, fraudulent or broken EDI transactions before they reach the ERP or trigger a payment.
+Free, open tools that help small and mid-sized manufacturers and distributors detect tampered, fraudulent, or broken EDI transactions before they reach the ERP or trigger a payment.
 
 Part of the **Supply Chain Business-Systems Security Toolkit**.
 
@@ -8,7 +8,7 @@ Part of the **Supply Chain Business-Systems Security Toolkit**.
 
 ## Why this exists
 
-EDI (Electronic Data Interchange) carries purchase orders, ship notices and invoices between companies. Large enterprises use commercial tools to monitor it. Small manufacturers usually have one IT person and no way to tell whether an invoice's payment address was quietly changed, an invoice bills goods that never shipped, or a document came from a look-alike sender. This project provides that capability for free.
+EDI (Electronic Data Interchange) carries purchase orders, ship notices, and invoices between companies. Large enterprises use commercial tools to monitor it. Small manufacturers usually have one IT person and no way to tell whether an invoice's payment address was quietly changed, an invoice bills goods that never shipped, or a document came from a look-alike sender. This project provides that capability for free.
 
 ## What's here now: the synthetic data generator
 
@@ -38,7 +38,7 @@ A configurable share of documents is then altered or added to simulate attacks a
 | `ship_to_diverted` | Ship notice sends goods to an unapproved address |
 | `unusual_purchase_order` | Buyer-side purchase order entered on a weekend night with an abnormal quantity |
 
-### Run it
+### Running it
 
 Requires Python 3.10 or newer. No other packages.
 
@@ -98,4 +98,4 @@ The tests check every file's envelope (ISA length, matching control numbers, seg
 
 ## License
 
-MIT. See `LICENSE`.
+Ken Ntwiga. See `LICENSE`.
