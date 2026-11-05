@@ -1,9 +1,10 @@
 __pycache__/
 *.pyc
 .venv/
-# Generated datasets: regenerate with the seed instead of committing large folders
+# Generated datasets and detector output: regenerate with the seed instead of committing
 sample/
 runs/
+results/
 # Never commit real EDI
 *.real.edi
 private/
