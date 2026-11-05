@@ -4,7 +4,7 @@ Free, open tools that help small and mid-sized manufacturers and distributors de
 
 Part of the **Supply Chain Business-Systems Security Toolkit**.
 
-> **Status: v0.1 in development.** The synthetic data generator is complete and tested. Detection layers are being built in the order listed under *Roadmap*.
+> **Status: v0.1.** The synthetic data generator and the rule-based detector (layers 1–3) are complete and tested. Machine-learning behavior scoring (layer 4) is next.
 
 ## Why this exists
 
@@ -73,13 +73,23 @@ A detector should use only `edi/` and `master_data.json`. Keep `labels.csv` asid
 python -m unittest discover -s tests -v
 ```
 
-The tests check every file's envelope (ISA length, matching control numbers, segment counts), invoice totals, and that every labeled anomaly is actually present in the data.
+The 12 tests check every generated file's envelope (ISA length, matching control numbers, segment counts), invoice totals, and that every labeled anomaly is actually present in the data. They also run the detector on three datasets it was not tuned on and require at least 95% recall and precision.
+
+## The detector (layers 1–3)
+
+`detector/edi_detect.py` checks a folder of EDI files against the buyer's trusted master data and writes every finding, with the reason, to `findings.csv`.
+
+```bash
+python detector/edi_detect.py --edi sample/edi --master sample/master_data.json --out results --labels sample/labels.csv
+```
+
+On 16 generated datasets (42,252 documents, 837 planted anomalies), it detected 834 (recall 99.6%) with no false alarms. These results come from synthetic data and show that the rules catch the generator's attack patterns; they are not a measure of performance on real trading data. See [docs/detector.md](docs/detector.md) for every rule, the full results, and their limits.
 
 ## Roadmap
 
-1. **Structure checks:** envelope validity, control-number sequence and reuse, known sender IDs
-2. **Business-rule checks:** invoice vs. purchase order vs. ship notice on items, quantities and prices; duplicate detection
-3. **Change alerts:** remit-to, ship-to and new-sender changes compared with master data
+1. ✅ **Structure checks** (v0.1): envelope validity, control-number sequence and reuse, known sender IDs
+2. ✅ **Business-rule checks** (v0.1): invoice vs. purchase order vs. ship notice on items, quantities and prices; duplicate detection
+3. ✅ **Change alerts** (v0.1): remit-to, ship-to and new-sender changes compared with master data
 4. **Behavior scoring:** per-partner baselines with machine-learning anomaly scoring (for example, Isolation Forest), evaluated with precision and recall per anomaly type
 5. **Lab integration:** inspect files as they arrive over AS2 (OpenAS2) and send alerts to a log platform
 
@@ -98,4 +108,4 @@ The tests check every file's envelope (ISA length, matching control numbers, seg
 
 ## License
 
-Ken Ntwiga. See `LICENSE`.
+MIT License, © 2026 Ken Ntwiga. See `LICENSE`.
