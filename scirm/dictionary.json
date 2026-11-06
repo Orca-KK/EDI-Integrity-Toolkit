@@ -1,0 +1,202 @@
+{
+  "_about": "SCIRM error dictionary. Every code a person might see is translated once here: what it means, why it usually happens, how to fix it, who owns it, and how urgent it is. Keys are '<source>:<code>'. Site-specific translator codes are mapped in scirm/local_codes.json (not committed; see local_codes.example.json).",
+  "tiers": {
+    "P1": {"name": "Critical", "channel": "Chat/pager + ticket", "escalate_after_minutes": 30},
+    "P2": {"name": "High", "channel": "Chat + ticket", "escalate_after_minutes": 240},
+    "P3": {"name": "Medium", "channel": "Daily digest", "escalate_after_minutes": null},
+    "P4": {"name": "Info", "channel": "Weekly report", "escalate_after_minutes": null}
+  },
+  "entries": {
+    "detector:envelope_invalid": {
+      "meaning": "The file's envelope is malformed, so it cannot be trusted or processed as sent",
+      "causes": ["Partner translator bug", "File truncated or altered in transit", "Manual edit of the file"],
+      "fix": ["Ask the partner to resend", "Compare the control numbers and segment counts against the original", "If edited by hand, find out who and why"],
+      "owner": "EDI analyst", "category": "structure", "tier": "P2", "retry": false, "security": true,
+      "impact": "The document is not processed until it is resent"
+    },
+    "detector:unknown_sender": {
+      "meaning": "The file came from a sender ID that is not a registered trading partner",
+      "causes": ["Look-alike sender ID (impersonation)", "Partner changed its ID without notice", "New partner not yet set up"],
+      "fix": ["Do not process the file", "Confirm with the real partner by phone, using a number already on file", "Register the ID only after confirmation"],
+      "owner": "EDI analyst + Security", "category": "security", "tier": "P1", "retry": false, "security": true,
+      "impact": "Possible fraud: an outsider posing as a partner"
+    },
+    "detector:replayed_control_number": {
+      "meaning": "This interchange control number was already received from this sender",
+      "causes": ["Replay of an old file", "Partner resent without new control numbers", "Translator counter reset"],
+      "fix": ["Compare with the earlier file", "If identical, discard as a duplicate", "If different, treat as suspicious and confirm with the partner"],
+      "owner": "EDI analyst + Security", "category": "security", "tier": "P1", "retry": false, "security": true,
+      "impact": "Risk of duplicate orders or payments"
+    },
+    "detector:invoice_no_po": {
+      "meaning": "The invoice references a purchase order that does not exist",
+      "causes": ["Wrong PO number keyed by the supplier", "Fabricated invoice"],
+      "fix": ["Hold payment", "Ask the supplier for the correct PO", "Escalate if no PO can be found"],
+      "owner": "Accounts payable", "category": "business_rule", "tier": "P2", "retry": false, "security": true,
+      "impact": "Payment held"
+    },
+    "detector:invoice_without_shipment": {
+      "meaning": "The invoice bills an order with no ship notice received",
+      "causes": ["Ship notice delayed or lost", "Invoice for goods never shipped"],
+      "fix": ["Hold payment", "Request the 856 or a proof of delivery", "Confirm receipt in the warehouse"],
+      "owner": "Accounts payable", "category": "business_rule", "tier": "P2", "retry": false, "security": true,
+      "impact": "Payment held until receipt is confirmed"
+    },
+    "detector:price_above_po": {
+      "meaning": "The invoice price is above the PO price by more than the tolerance, or bills an item not on the PO",
+      "causes": ["Price change not agreed on the PO", "Billing error", "Inflated invoice"],
+      "fix": ["Pay at PO price or hold", "Ask the supplier for a corrected invoice", "Update the PO only with buyer approval"],
+      "owner": "Accounts payable + Buyer", "category": "business_rule", "tier": "P2", "retry": false, "security": true,
+      "impact": "Overpayment risk"
+    },
+    "detector:quantity_over_shipped": {
+      "meaning": "More units are billed than were shipped by the invoice date",
+      "causes": ["Invoice sent before the second partial shipment", "Overbilling"],
+      "fix": ["Pay only for shipped quantity", "Request a corrected invoice"],
+      "owner": "Accounts payable", "category": "business_rule", "tier": "P2", "retry": false, "security": true,
+      "impact": "Overpayment risk"
+    },
+    "detector:duplicate_invoice": {
+      "meaning": "The same charges were billed again under a new or altered invoice number",
+      "causes": ["Supplier resent after no payment", "Deliberate double billing"],
+      "fix": ["Do not pay the second invoice", "Tell the supplier which invoice it duplicates"],
+      "owner": "Accounts payable", "category": "business_rule", "tier": "P1", "retry": false, "security": true,
+      "impact": "Double payment risk"
+    },
+    "detector:remit_to_changed": {
+      "meaning": "The invoice asks to be paid at a remit-to address that differs from the registered one",
+      "causes": ["Payment redirection fraud", "Supplier moved its lockbox without notice"],
+      "fix": ["Pay only to the registered address", "Verify the change by calling a contact already on file, never one on the invoice", "Change master data only after verification"],
+      "owner": "Accounts payable + Security", "category": "security", "tier": "P1", "retry": false, "security": true,
+      "impact": "Payment could be sent to a criminal"
+    },
+    "detector:ship_to_not_approved": {
+      "meaning": "The ship notice sends goods to a location that is not approved",
+      "causes": ["Shipment diversion", "New site not yet added to master data"],
+      "fix": ["Contact the carrier and supplier to confirm the destination", "Stop the shipment if not confirmed"],
+      "owner": "Logistics + Security", "category": "security", "tier": "P1", "retry": false, "security": true,
+      "impact": "Goods could be lost or stolen"
+    },
+    "detector:unusual_purchase_order": {
+      "meaning": "A purchase order was entered off-hours with an abnormal quantity",
+      "causes": ["Compromised buyer account", "Keying error", "Legitimate rush order"],
+      "fix": ["Confirm with the buyer who entered it", "Hold the order until confirmed", "Review the account's sign-ins"],
+      "owner": "Purchasing + Security", "category": "security", "tier": "P2", "retry": false, "security": true,
+      "impact": "Unauthorized spend or inventory"
+    },
+
+    "prevalidation:shipto_xref_missing": {
+      "meaning": "The ship-to location on the order has no cross-reference to a distribution center",
+      "causes": ["New or changed location never added to the cross-reference", "ID sent in a different format or qualifier than the table expects", "Partner sent the wrong location"],
+      "fix": ["Search the cross-reference with and without leading zeros", "Confirm the location with the partner", "Add the mapping", "Release the held document"],
+      "owner": "Master data (EDI analyst backup)", "category": "master_data", "tier": "P2", "retry": false, "security": false,
+      "impact": "The order cannot release to the warehouse; edits to related sales orders also fail"
+    },
+    "prevalidation:shipto_id_format": {
+      "meaning": "The ship-to ID matches a known location only after removing padding",
+      "causes": ["Partner pads IDs with leading zeros", "Cross-reference stores the unpadded form"],
+      "fix": ["Normalize IDs before lookup", "Store one canonical form in the cross-reference"],
+      "owner": "EDI developer", "category": "mapping", "tier": "P3", "retry": false, "security": false,
+      "impact": "None once normalized; a hold without normalization"
+    },
+    "prevalidation:delivery_date_inside_lead_time": {
+      "meaning": "The requested delivery date is sooner than the item's lead time allows",
+      "causes": ["Customer system does not use the agreed lead time", "Rush request"],
+      "fix": ["Set the date from lead time automatically", "Correct the lead time in the source system", "Log any manual date change with user and reason"],
+      "owner": "Customer service", "category": "process", "tier": "P3", "retry": false, "security": false,
+      "impact": "Manual date edits; late or rushed shipments"
+    },
+
+    "lag:ack_997_missing": {
+      "meaning": "No functional acknowledgment (997) came back for a document",
+      "causes": ["Partner did not receive it", "Partner translator down", "Ack rejected or lost"],
+      "fix": ["Check the provider's delivery log", "Resend if not delivered", "Contact the partner if delivered but not acknowledged"],
+      "owner": "Integration ops", "category": "lag", "tier": "P2", "retry": true, "security": false,
+      "impact": "Unknown whether the partner has the document"
+    },
+    "lag:ack_997_late": {
+      "meaning": "The 997 came back later than the agreed window",
+      "causes": ["Partner batches its acknowledgments", "Mailbox polling delay"],
+      "fix": ["Check the hop timestamps for where time was lost", "Raise with the partner if repeated"],
+      "owner": "Integration ops", "category": "lag", "tier": "P4", "retry": false, "security": false,
+      "impact": "Slower confirmation"
+    },
+    "lag:po_ack_855_late": {
+      "meaning": "The PO acknowledgment (855) arrived later than the agreed window",
+      "causes": ["Supplier reviews orders by hand", "Supplier batch schedule", "PO waiting in a hold"],
+      "fix": ["Follow up with the supplier", "Track the supplier's late rate on the scorecard"],
+      "owner": "Buyer", "category": "lag", "tier": "P3", "retry": false, "security": false,
+      "impact": "Order status unknown; planning risk"
+    },
+    "lag:po_ack_855_missing": {
+      "meaning": "No PO acknowledgment (855) was received for a purchase order",
+      "causes": ["Supplier not set up to send 855s", "855 rejected by our translator"],
+      "fix": ["Check for a held or rejected 855", "Ask the supplier to send it"],
+      "owner": "Buyer", "category": "lag", "tier": "P3", "retry": false, "security": false,
+      "impact": "Order status unknown"
+    },
+
+    "x12:AK5:A": {"meaning": "Transaction set accepted", "causes": [], "fix": [], "owner": "None", "category": "ack", "tier": "P4", "retry": false, "security": false, "impact": "None"},
+    "x12:AK5:E": {
+      "meaning": "Accepted, but the partner noted errors",
+      "causes": ["Optional data malformed or unexpected"],
+      "fix": ["Read the AK3/AK4 detail", "Fix the map in the next release; no resend needed"],
+      "owner": "EDI analyst", "category": "partner", "tier": "P3", "retry": false, "security": false,
+      "impact": "Low"
+    },
+    "x12:AK5:R": {
+      "meaning": "The partner rejected the transaction set",
+      "causes": ["Syntax or code errors in what we sent"],
+      "fix": ["Read the AK3/AK4 detail", "Fix the map or data", "Resend"],
+      "owner": "EDI analyst", "category": "partner", "tier": "P2", "retry": false, "security": false,
+      "impact": "The partner does not have the document"
+    },
+    "x12:AK3:1": {"meaning": "Unrecognized segment ID", "causes": ["Map writes a segment the partner does not support"], "fix": ["Remove or rename the segment in the map"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK3:2": {"meaning": "Unexpected segment", "causes": ["Segment not allowed at this point"], "fix": ["Check the partner's guide for where it belongs"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK3:3": {"meaning": "Mandatory segment missing", "causes": ["Map leaves out a required segment"], "fix": ["Add the segment to the map"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK3:4": {"meaning": "Loop occurs over its maximum times", "causes": ["Too many repeats of a loop"], "fix": ["Split the document or cap the loop"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK3:5": {"meaning": "Segment exceeds its maximum use", "causes": ["Segment repeated too often"], "fix": ["Cap repeats in the map"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK3:6": {"meaning": "Segment not in the defined transaction set", "causes": ["Wrong version or transaction set"], "fix": ["Check the version in GS08"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK3:7": {"meaning": "Segment not in proper sequence", "causes": ["Map writes segments out of order"], "fix": ["Reorder the segments in the map"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK3:8": {"meaning": "Segment has data element errors (see AK4)", "causes": ["One or more elements invalid"], "fix": ["Read the AK4 lines for the exact element"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK4:1": {"meaning": "Mandatory data element missing", "causes": ["Source field empty in the ERP", "Map does not populate it"], "fix": ["Find the element position in the AK4", "Populate it from the ERP field"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK4:2": {"meaning": "Conditional required data element missing", "causes": ["A paired element was sent without its partner"], "fix": ["Send both elements of the pair, or neither"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK4:3": {"meaning": "Too many data elements", "causes": ["Extra element delimiter"], "fix": ["Trim trailing elements in the map"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK4:4": {"meaning": "Data element too short", "causes": ["Value shorter than the minimum length"], "fix": ["Pad or correct the value"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK4:5": {"meaning": "Data element too long", "causes": ["Value longer than the maximum length"], "fix": ["Truncate or correct the value"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK4:6": {"meaning": "Invalid character in data element", "causes": ["Delimiter or non-ASCII character in the data"], "fix": ["Clean the source text"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK4:7": {"meaning": "Invalid code value", "causes": ["Code not in the agreed code list"], "fix": ["Align the code list with the partner's guide"], "owner": "EDI analyst", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK4:8": {"meaning": "Invalid date", "causes": ["Wrong format or impossible date"], "fix": ["Use CCYYMMDD and check the source date"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK4:9": {"meaning": "Invalid time", "causes": ["Wrong format or impossible time"], "fix": ["Use HHMM and check the source time"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+    "x12:AK4:10": {"meaning": "Exclusion condition violated", "causes": ["Two elements sent that must not appear together"], "fix": ["Send only one of the pair"], "owner": "EDI developer", "category": "mapping", "tier": "P2", "retry": false, "security": false, "impact": "Rejection"},
+
+    "iam:sod_conflict": {
+      "meaning": "One user holds two permissions that together allow fraud without anyone else noticing",
+      "causes": ["Roles added over time and never reviewed", "Temporary access never removed", "Small team covering for each other"],
+      "fix": ["Remove one of the two permissions, or split the role", "If the team is too small to split, require a second approver and review the audit log weekly"],
+      "owner": "IT security + Process owner", "category": "access", "tier": "P2", "retry": false, "security": true,
+      "impact": "Fraud can be committed and hidden by one person"
+    },
+    "iam:dormant_privileged": {
+      "meaning": "A privileged account has not been used within the review window",
+      "causes": ["Employee left or changed roles", "Service account no longer needed"],
+      "fix": ["Disable the account or remove the privileged role", "Confirm with the manager before re-enabling"],
+      "owner": "IT security", "category": "access", "tier": "P3", "retry": false, "security": true,
+      "impact": "An unused account with power is an easy target for takeover"
+    },
+    "iam:unauthorized_release": {
+      "meaning": "Someone without the required permission tried to release a held document or alert",
+      "causes": ["User unaware of the rule", "Attempt to push through a suspicious document"],
+      "fix": ["Confirm with the user why they tried", "If the hold was security-related, review the document before anyone releases it"],
+      "owner": "IT security", "category": "access", "tier": "P2", "retry": false, "security": true,
+      "impact": "A held, possibly fraudulent document could be processed"
+    },
+    "iam:audit_log_tampered": {
+      "meaning": "The audit log's hash chain is broken: an entry was edited, inserted or deleted",
+      "causes": ["Someone altered the log to hide an action", "File corruption"],
+      "fix": ["Preserve the file as evidence", "Restore from backup and compare", "Treat releases and changes after the break as unverified"],
+      "owner": "IT security", "category": "security", "tier": "P1", "retry": false, "security": true,
+      "impact": "Who did what can no longer be proven"
+    }
+  }
+}

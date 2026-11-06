@@ -1,0 +1,4 @@
+{
+  "_about": "Copy to scirm/local_codes.json (git-ignored) and map your EDI product's own error codes onto dictionary entries. A value can be an existing dictionary key, or a full entry with meaning, causes, fix, owner, category, tier.",
+  "translator:900": "prevalidation:shipto_xref_missing"
+}
