@@ -110,7 +110,9 @@ def load(edi_dir: Path) -> list[Doc]:
 # Layer 1: structure
 # --------------------------------------------------------------------------------------
 def check_structure(docs: list[Doc], master: dict) -> None:
-    known = {s["id"] for s in master["suppliers"]} | {master["buyer"]["id"]}
+    known = ({s["id"] for s in master["suppliers"]}
+             | {c["id"] for c in master.get("customers", [])}
+             | {master["buyer"]["id"]})
     seen_ctrl: dict[str, set[str]] = defaultdict(set)
     for d in docs:
         problems = []
