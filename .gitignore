@@ -8,3 +8,7 @@ results/
 # Never commit real EDI
 *.real.edi
 private/
+cases/
+results_cases/
+# Site-specific error codes describe a real system: keep them local
+scirm/local_codes.json

@@ -2,7 +2,7 @@
 
 Tools for catching tampered, fraudulent, or broken EDI transactions before they reach the ERP or trigger a payment. I'm building them for small and mid-sized manufacturers and distributors that don't have a security team.
 
-Current version: **v0.1** (synthetic data generator and rule-based detector). The machine-learning layer is next.
+Current version: **v0.3**. v0.1 added a synthetic data generator and a rule-based detector. v0.2 added **SCIRM**, a resilience layer that decodes errors, measures lag, and turns findings into alerts people can act on. v0.3 adds access controls: a separation-of-duties review, role-based release of held documents, and a tamper-evident audit log.
 
 ## Background
 
@@ -16,8 +16,13 @@ This repo is one piece of a larger set of security resources I'm putting togethe
 | --- | --- |
 | `generator/edi_synth.py` | Creates realistic fake EDI traffic with labeled attacks |
 | `detector/edi_detect.py` | Checks EDI files and reports anything suspicious |
-| `tests/` | Tests for both |
+| `scirm/` | The Supply Chain Integration Resilience Model: pre-validation, error decoding, lag tracing, alerts, access controls, issue register |
+| `scirm/dictionary.json` | Error dictionary: each code's meaning, causes, fix, owner and alert tier |
+| `register/issues.csv` | The issue register, started with five anonymized patterns from real operations |
+| `tests/` | Tests for all three |
 | `docs/detector.md` | Every detection rule, full results, and known weak spots |
+| `docs/scirm.md` | How SCIRM works, the failure cases it reproduces, and results so far |
+| `docs/threat-model.md` | Each check mapped to STRIDE and MITRE ATT&CK |
 
 Python 3.10 or newer. No other packages needed.
 
@@ -90,19 +95,60 @@ So far it covers three layers:
 
 On 16 generated datasets (42,252 documents, 837 planted anomalies) it caught 834 and raised no false alarms. Keep in mind I wrote the generator and the detector together, so that mostly shows the rules work on the attack patterns I designed. It says nothing yet about real trading data. The weak spots are written up in `docs/detector.md`.
 
+## Running the full model (SCIRM)
+
+The detector finds suspicious documents. In day-to-day operations, though, most of the time goes elsewhere: errors that arrive as bare codes, documents stuck on hold, acknowledgments that come back late or never, and alerts nobody can act on. SCIRM wraps the detector in a loop that handles those:
+
+```
+intake -> validate -> decode -> notify -> resolve -> (lessons back into validate and decode)
+```
+
+```bash
+python scirm/run.py --edi sample/edi --master sample/master_data.json --out results --labels sample/labels.csv
+```
+
+It writes `report.md` (a one-page summary), `alerts.md` / `alerts.json` (tiered alerts), `findings.csv` (every finding, decoded), `lag.csv` and `metrics.json`. On the default dataset, 191 findings become 37 alerts, every finding is decoded, and the detector's score is unchanged.
+
+To see the failure patterns it was built for, generate the cases folder and run it with a translator error log and the issue register:
+
+```bash
+python scirm/cases.py --master sample/master_data.json --out cases
+python scirm/run.py --edi cases/edi --master cases/master_data.json --out results_cases \
+    --translator-errors cases/translator_errors.jsonl \
+    --local-codes scirm/local_codes.example.json --register results_cases/issues.csv \
+    --access cases/access.json --audit-log cases/audit.jsonl
+```
+
+| What SCIRM adds | Problem it addresses |
+| --- | --- |
+| Error dictionary + 997 reader | A code like `AK4*3*355*7` becomes "Invalid code value in PO1, element 3 (unit of measure): 'BX'", with the fix and the owner |
+| Ship-to pre-validation | Unmapped or zero-padded locations are caught at receipt with a clear reason, instead of turning up as a coded hold or a sales order that won't save |
+| Delivery-date check | Orders whose requested date ignores lead time are flagged before someone edits them by hand |
+| Trace IDs + lag | Median and 95th-percentile lag per partner for document -> 997 and PO -> 855, plus late and missing counts |
+| Tiered alerts | Repeats grouped, shared root causes merged, seven-part format, security copies, and self-contradicting alerts held back |
+| Access controls | Flags anyone who can both change a supplier's remit-to details and approve payment, and privileged accounts nobody uses. Only permitted roles can release held documents, and security holds need a higher permission. Every release and manual change goes into an audit log chained by SHA-256 hashes, so an edited entry is detectable |
+| Issue register | Five fields to log an issue; unknown codes are added automatically |
+
+Details are in `docs/scirm.md`.
+
 ## Tests
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-There are 12. They check that every generated file has a valid envelope, that invoice totals add up, that every label matches what's actually in the file, and that the detector gets at least 95% recall and precision on three datasets it wasn't tuned on.
+There are 37. The original 12 check that every generated file has a valid envelope, that invoice totals add up, that every label matches what's actually in the file, and that the detector gets at least 95% recall and precision on three datasets it wasn't tuned on. The 25 SCIRM tests cover GS1 check digits, ship-to normalization, lead-time rules, the dictionary and site overlay, alert grouping and defect holds, the issue register, lag measurement, separation of duties, role-based release, the audit log's hash chain, and both end-to-end runs.
 
 ## Roadmap
 
 - [x] Structure checks (v0.1)
 - [x] Business-rule checks (v0.1)
 - [x] Change alerts (v0.1)
+- [x] SCIRM: error dictionary, 997 decoding, ship-to and lead-time pre-validation (v0.2)
+- [x] SCIRM: trace IDs, acknowledgment lag, tiered alerts, issue register (v0.2)
+- [ ] Business-hours SLA windows per partner; wave-performance intake from a WMS export
+- [x] Access controls: separation-of-duties review, role-based release, tamper-evident audit log (v0.3)
+- [ ] Alert delivery to chat and ticket webhooks; an HTTP API over the stateless checks
 - [ ] Machine-learning behavior scoring: a baseline per trading partner, scored by precision and recall for each anomaly type
 - [ ] Live mode: check files as they arrive over AS2 (OpenAS2) and send alerts to a log platform
 - [ ] Pilot with a company on its own systems and data
@@ -113,6 +159,8 @@ There are 12. They check that every generated file has a valid envelope, that in
 - The generator writes a practical subset of X12 004010, one transaction per interchange. It hasn't been checked against any trading partner's implementation guide.
 - Rogue POs take the next number after the normal sequence, so their numbers are higher than POs dated around them. Don't build a rule on that.
 - The detector reads a whole folder at once. A live version would need to hold an invoice until its ship notice shows up.
+- SCIRM's lag windows are wall-clock hours, so weekends count against them.
+- The issue register's starting entries describe patterns I've seen at work in general terms only. They contain no names, IDs or data.
 - Generated files are marked as test data (`ISA15 = T`).
 
 ## Data rules
