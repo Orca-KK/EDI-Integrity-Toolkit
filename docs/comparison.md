@@ -35,6 +35,21 @@ Full figures, including the by-type counts with every x12-doctor finding include
 
 The detector raised no alerts on clean documents.
 
+## Speed
+
+Both tools were run from the command line on each of the 16 datasets, the way a user would run them, and timed end to end. Median of 5 rounds on one test machine:
+
+| Tool | Time for 37,712 files | Files per second |
+| --- | ---: | ---: |
+| Detector | 2.20 s | about 17,100 |
+| x12-doctor | 5.18 s | about 7,300 |
+
+The detector was about 2.4 times faster. Absolute times depend on the machine; the gap between the tools is the useful figure. x12-doctor spends part of its time on detailed format diagnosis, which the detector does not do. Results are in [`benchmarks/comparison/speed.json`](../benchmarks/comparison/speed.json).
+
+```bash
+python benchmarks/speed_x12doctor.py --seeds 101-116 --anomaly-rate 0.04 --rounds 5
+```
+
 ## How x12-doctor was scored
 
 - A planted document counts as caught if x12-doctor reported any finding on it, either in its own report or in a cross-file finding that names it.

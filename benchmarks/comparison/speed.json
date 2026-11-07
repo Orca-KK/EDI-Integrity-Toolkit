@@ -1,0 +1,25 @@
+{
+  "seeds": "101-116",
+  "files": 37712,
+  "rounds": 5,
+  "detector_seconds": 5.04,
+  "x12doctor_seconds": 8.9,
+  "detector_files_per_second": 7481,
+  "x12doctor_files_per_second": 4238,
+  "all_rounds": {
+    "detector": [
+      5.23,
+      5.2,
+      4.89,
+      5.04,
+      4.97
+    ],
+    "x12doctor": [
+      10.62,
+      8.9,
+      8.77,
+      9.43,
+      8.76
+    ]
+  }
+}
