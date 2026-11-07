@@ -29,16 +29,16 @@ python detector/edi_detect.py --edi sample/edi --master sample/master_data.json 
 
 ## Results on synthetic data
 
-Measured on 16 generated datasets (6 suppliers, 6 months, 4% anomaly rate each), none of which were used to set the thresholds after the first tuning pass:
+Measured on 16 generated datasets (seeds 101–116; 6 suppliers, 6 months, 4% anomaly rate each), none of which were used to set the thresholds after the first tuning pass:
 
 | Measure | Result |
 | --- | --- |
-| Documents checked | 42,252 |
-| Labeled anomalies | 837 |
-| Detected | 834 (recall 99.6%) |
+| Documents checked | 37,712 |
+| Labeled anomalies | 747 |
+| Detected | 745 (recall 99.7%) |
 | False alarms | 0 (precision 100%) |
 
-The three misses were rogue purchase orders whose quantity was less than 3× the item's normal median.
+The two misses were rogue purchase orders whose quantity was less than 3× the item's normal median.
 
 ## Read these results carefully
 

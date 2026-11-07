@@ -93,7 +93,9 @@ So far it covers three layers:
 2. **Business rules:** invoice vs. PO vs. ship notice on items, prices, and quantities; duplicate invoices
 3. **Changes:** remit-to and ship-to addresses that don't match the buyer's records; POs entered off-hours with unusual quantities
 
-On 16 generated datasets (42,252 documents, 837 planted anomalies) it caught 834 and raised no false alarms. Keep in mind I wrote the generator and the detector together, so that mostly shows the rules work on the attack patterns I designed. It says nothing yet about real trading data. The weak spots are written up in `docs/detector.md`.
+On 16 generated datasets (seeds 101–116, 37,712 documents, 747 planted anomalies) it caught 745 and raised no false alarms. Keep in mind I wrote the generator and the detector together, so that mostly shows the rules work on the attack patterns I designed. It says nothing yet about real trading data. The weak spots are written up in `docs/detector.md`.
+
+On the same datasets I also ran x12-doctor, an open-source X12 checker for the same document types. It reliably caught replayed files but reported nothing on most of the other planted problems, because they are correctly formatted documents carrying the wrong content. The setup, results and caveats are in `docs/comparison.md`.
 
 ## Running the full model (SCIRM)
 

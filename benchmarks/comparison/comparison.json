@@ -1,0 +1,95 @@
+{
+  "seeds": "101-116",
+  "anomaly_rate": 0.04,
+  "x12doctor_version": "x12-doctor 0.1.0",
+  "totals": {
+    "documents": 37712,
+    "planted": 747,
+    "ours_caught": 745,
+    "xd_caught_any": 223,
+    "xd_caught_relevant": 81,
+    "xd_passed_clean": 524,
+    "xd_missed_relevant": 666,
+    "ours_false_alarms": 0,
+    "xd_clean_flagged": 6881
+  },
+  "by_type": [
+    {
+      "type": "quantity_overbilled",
+      "label": "Billed more than shipped",
+      "planted": 84,
+      "detector": 84,
+      "x12doctor_any_finding": 15,
+      "x12doctor_relevant_finding": 2
+    },
+    {
+      "type": "duplicate_invoice",
+      "label": "Duplicate invoice",
+      "planted": 84,
+      "detector": 84,
+      "x12doctor_any_finding": 0,
+      "x12doctor_relevant_finding": 0
+    },
+    {
+      "type": "invoice_without_shipment",
+      "label": "Invoice with no shipment",
+      "planted": 82,
+      "detector": 82,
+      "x12doctor_any_finding": 1,
+      "x12doctor_relevant_finding": 0
+    },
+    {
+      "type": "unknown_sender",
+      "label": "Look-alike sender",
+      "planted": 83,
+      "detector": 83,
+      "x12doctor_any_finding": 16,
+      "x12doctor_relevant_finding": 0
+    },
+    {
+      "type": "price_inflation",
+      "label": "Price above the PO",
+      "planted": 83,
+      "detector": 83,
+      "x12doctor_any_finding": 13,
+      "x12doctor_relevant_finding": 0
+    },
+    {
+      "type": "remit_to_change",
+      "label": "Remit-to (bank) address changed",
+      "planted": 86,
+      "detector": 86,
+      "x12doctor_any_finding": 16,
+      "x12doctor_relevant_finding": 0
+    },
+    {
+      "type": "replayed_control_number",
+      "label": "Replayed file",
+      "planted": 79,
+      "detector": 79,
+      "x12doctor_any_finding": 79,
+      "x12doctor_relevant_finding": 79
+    },
+    {
+      "type": "ship_to_diverted",
+      "label": "Shipment diverted",
+      "planted": 83,
+      "detector": 83,
+      "x12doctor_any_finding": 83,
+      "x12doctor_relevant_finding": 0
+    },
+    {
+      "type": "unusual_purchase_order",
+      "label": "Unusual purchase order",
+      "planted": 83,
+      "detector": 81,
+      "x12doctor_any_finding": 0,
+      "x12doctor_relevant_finding": 0
+    }
+  ],
+  "x12doctor_codes_on_clean_documents": {
+    "C06": 3198,
+    "B04": 4764,
+    "A04": 57
+  }
+}
