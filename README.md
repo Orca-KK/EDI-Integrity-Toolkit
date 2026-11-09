@@ -8,7 +8,7 @@ Version 0.3 · Python 3.10+ · standard library only · MIT
 
 - **Detects fraud and integrity problems:** changed remit-to addresses, duplicate or inflated invoices, invoices with no shipment, diverted shipments, look-alike senders, replayed files.
 - **Decodes errors:** 997 codes and translator errors become a meaning, a fix and an owner.
-- **Pre-validates orders:** unmapped or zero-padded ship-to IDs and impossible delivery dates.
+- **Pre-validates orders:** unmapped or zero-padded ship-to IDs and delivery dates inside the agreed lead time.
 - **Measures lag:** median and 95th-percentile time to 997 and 855, per partner.
 - **Sends fewer, better alerts:** grouped, tiered P1 to P4, and held if they contradict themselves.
 - **Controls access:** separation-of-duties review, dormant admin accounts, role-based release of held documents, hash-chained audit log.
