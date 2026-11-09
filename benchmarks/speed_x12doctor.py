@@ -1,13 +1,6 @@
-"""Time the detector and x12-doctor on the same generated datasets.
+"""Time the detector and x12-doctor on the same generated datasets. Requires x12-doctor.
 
-Each tool is run from the command line on every dataset, the way a user would
-run it, and the total wall-clock time is recorded. The median of several rounds
-is reported.
-
-Requires: pip install x12-doctor
-
-Usage:
-    python benchmarks/speed_x12doctor.py --seeds 101-116 --anomaly-rate 0.04 --rounds 3
+Usage: python benchmarks/speed_x12doctor.py --rounds 5
 """
 
 import argparse

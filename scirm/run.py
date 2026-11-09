@@ -1,27 +1,7 @@
 #!/usr/bin/env python3
-"""
-run.py - Run the SCIRM loop over a folder of X12 files.
+"""Run the full SCIRM loop over a folder of X12 files.
 
-    1. Intake       load the .edi files (and, optionally, a translator error log)
-    2. Validate     detector layers 1-3 + pre-validation (ship-to cross-reference, delivery dates)
-    3. Decode       every finding and every 997 code through the error dictionary
-    4. Measure      trace IDs and lag (any document -> 997, 850 -> 855)
-    5. Notify       group into tiered, seven-part alerts; hold any alert that contradicts itself
-    6. Access       separation-of-duties review, dormant privileged accounts, audit-log integrity
-    7. Learn        add unknown codes to the issue register
-
-Usage:
-    python scirm/run.py --edi sample/edi --master sample/master_data.json --out results
-    python scirm/run.py --edi cases/edi --master cases/master_data.json --out results_cases \\
-        --translator-errors cases/translator_errors.jsonl --local-codes scirm/local_codes.example.json \\
-        --register results_cases/issues.csv --access cases/access.json --audit-log cases/audit.jsonl
-
-Outputs (in --out)
-    report.md            one-page summary for people
-    alerts.md / .json    alerts by tier, ready to send (or held, with the reason)
-    findings.csv         every finding with its decoded meaning, owner and tier
-    lag.csv              acknowledgment lag by partner: median, 95th percentile, late, missing
-    metrics.json         the model's scorecard
+Usage: python scirm/run.py --edi sample/edi --master sample/master_data.json --out results
 """
 from __future__ import annotations
 
@@ -42,8 +22,7 @@ from findings import Finding, detector_findings, edi_detect, load_docs
 
 
 def translator_findings(path: Path) -> tuple[list[Finding], list[str]]:
-    """Read an EDI product's error log (one JSON object per line). Also flags log lines whose
-    document count contradicts the error they report."""
+    """Read a translator error log (JSON lines) and flag lines whose document count contradicts the error."""
     out, defects = [], []
     for n, line in enumerate(Path(path).read_text().splitlines(), start=1):
         if not line.strip():

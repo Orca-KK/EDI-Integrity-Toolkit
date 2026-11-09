@@ -1,28 +1,7 @@
 #!/usr/bin/env python3
-"""
-edi_synth.py - Synthetic X12 (004010) supply-chain EDI generator with labeled anomalies.
+"""Synthetic X12 004010 supply-chain EDI with labeled anomalies. All data is fictitious.
 
-Part of the EDI Transaction Integrity Toolkit.
-
-It simulates a small manufacturer ("the buyer") trading with several suppliers:
-
-    buyer    --850 purchase order-->      supplier
-    supplier --997 acknowledgment-->      buyer
-    supplier --855 PO acknowledgment-->   buyer
-    supplier --856 advance ship notice--> buyer   (sometimes split into partial shipments)
-    supplier --810 invoice-->             buyer   (one per shipment)
-    buyer    --997 acknowledgment-->      supplier (for every 855, 856 and 810)
-
-Each supplier has its own normal behavior (order cadence, items, prices, lead times),
-plus realistic noise (partial shipments, small price corrections, late acknowledgments).
-A configurable share of documents is then altered or added to simulate attacks and
-errors. Every altered document is recorded in labels.csv so detection can be measured.
-
-All data is fictitious. No real company, person, or account is represented.
-Only the Python standard library is used.
-
-Usage:
-    python edi_synth.py --out ./sample --months 6 --suppliers 6 --anomaly-rate 0.03 --seed 42
+Usage: python generator/edi_synth.py --out sample --seed 42
 """
 
 from __future__ import annotations
@@ -36,9 +15,6 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-# --------------------------------------------------------------------------------------
-# Delimiters and constants
-# --------------------------------------------------------------------------------------
 ELEM = "*"
 SEG = "~"
 SUBELEM = ">"
@@ -60,9 +36,6 @@ ANOMALY_TYPES = [
     "unusual_purchase_order",   # buyer's own PO at an odd hour with an abnormal quantity
 ]
 
-# --------------------------------------------------------------------------------------
-# Fictitious master data
-# --------------------------------------------------------------------------------------
 BUYER = {
     "id": "LAKESHOREMFG",
     "name": "Lakeshore Fabrication Co (fictitious)",
@@ -137,9 +110,6 @@ class Doc:
     refs: dict = field(default_factory=dict)  # links between documents
 
 
-# --------------------------------------------------------------------------------------
-# Helpers
-# --------------------------------------------------------------------------------------
 def money(x: float) -> str:
     return f"{x:.2f}"
 
@@ -184,9 +154,6 @@ def next_business_day(d: date) -> date:
     return d
 
 
-# --------------------------------------------------------------------------------------
-# Normal document flow
-# --------------------------------------------------------------------------------------
 def simulate(suppliers: list[Supplier], start: date, months: int, rng: random.Random) -> list[Doc]:
     end = start + timedelta(days=int(months * 30.4))
     docs: list[Doc] = []
@@ -268,9 +235,6 @@ def simulate(suppliers: list[Supplier], start: date, months: int, rng: random.Ra
     return docs
 
 
-# --------------------------------------------------------------------------------------
-# Anomaly injection
-# --------------------------------------------------------------------------------------
 def inject(docs: list[Doc], suppliers: list[Supplier], rate: float, rng: random.Random) -> list[Doc]:
     by_id = {s.id: s for s in suppliers}
     target = max(len(ANOMALY_TYPES), round(rate * len(docs)))
@@ -316,8 +280,7 @@ def inject(docs: list[Doc], suppliers: list[Supplier], rate: float, rng: random.
     for d in pick("810", per_type["duplicate_invoice"]):
         dup = copy.deepcopy(d)
         sup = by_id[d.sender]
-        # Two common real-world patterns: a lightly altered copy of the original number,
-        # or a fresh number continuing the supplier's own sequence
+        # Altered copy of the original number, or the supplier's next number
         if rng.random() < 0.5:
             new_no = d.doc_no + rng.choice(["A", "R", "-1", "-2"])
         else:
@@ -353,8 +316,7 @@ def inject(docs: list[Doc], suppliers: list[Supplier], rate: float, rng: random.
                                 "city": city, "state": state, "zip": zip_}
         d.label, d.detail = "ship_to_diverted", f"ship-to changed to {street}, {city} {state}"
 
-    # Rogue purchase orders: an extra PO entered at night on a weekend with an abnormal quantity.
-    # The supplier acknowledges it (855) as it would any PO, so the document flow stays consistent.
+    # Rogue PO: weekend night, abnormal quantity; the supplier still sends an 855
     max_po = max(int(d.doc_no[2:]) for d in docs if d.st == "850")
     first_day = min(d.ts for d in docs).date()
     for k, base in enumerate(pick("850", per_type["unusual_purchase_order"]), start=1):
@@ -390,9 +352,6 @@ def add_functional_acks(docs: list[Doc], rng: random.Random) -> list[Doc]:
     return docs + acks
 
 
-# --------------------------------------------------------------------------------------
-# Rendering to X12
-# --------------------------------------------------------------------------------------
 def seg(*elements) -> str:
     return ELEM.join(str(e) for e in elements) + SEG
 

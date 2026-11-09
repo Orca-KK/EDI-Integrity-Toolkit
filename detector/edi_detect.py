@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
-"""
-edi_detect.py - Rule-based integrity checks for X12 supply-chain EDI (layers 1-3).
+"""Rule-based integrity checks for X12 EDI: structure, business rules and change alerts.
 
-Part of the EDI Transaction Integrity Toolkit.
-
-Layer 1  Structure:   envelope validity, known senders, reused interchange control numbers
-Layer 2  Business:    invoice vs purchase order vs ship notice (prices, quantities, shipment
-                      exists), duplicate invoices
-Layer 3  Changes:     remit-to and ship-to changes against trusted master data, purchase
-                      orders entered off-hours with abnormal quantities
-
-It reads a folder of .edi files plus the buyer's trusted master data (master_data.json),
-and writes findings.csv. With --labels it also scores itself against a labeled dataset
-(such as one made by generator/edi_synth.py) and reports precision and recall.
-
-Usage:
-    python detector/edi_detect.py --edi sample/edi --master sample/master_data.json --out results
-    python detector/edi_detect.py --edi sample/edi --master sample/master_data.json --out results --labels sample/labels.csv
-
-Only the Python standard library is used.
+Usage: python detector/edi_detect.py --edi sample/edi --master sample/master_data.json --out results [--labels sample/labels.csv]
 """
 
 from __future__ import annotations
@@ -84,9 +67,6 @@ def el(seg: list[str] | None, i: int, default: str = "") -> str:
     return seg[i] if seg is not None and len(seg) > i else default
 
 
-# --------------------------------------------------------------------------------------
-# Loading
-# --------------------------------------------------------------------------------------
 def load(edi_dir: Path) -> list[Doc]:
     docs = []
     for p in sorted(edi_dir.glob("*.edi")):
@@ -106,9 +86,6 @@ def load(edi_dir: Path) -> list[Doc]:
     return docs
 
 
-# --------------------------------------------------------------------------------------
-# Layer 1: structure
-# --------------------------------------------------------------------------------------
 def check_structure(docs: list[Doc], master: dict) -> None:
     known = ({s["id"] for s in master["suppliers"]}
              | {c["id"] for c in master.get("customers", [])}
@@ -145,9 +122,6 @@ def check_structure(docs: list[Doc], master: dict) -> None:
         seen_ctrl[d.sender].add(d.isa_ctrl)
 
 
-# --------------------------------------------------------------------------------------
-# Layers 2 and 3: business rules and change alerts
-# --------------------------------------------------------------------------------------
 def check_business(docs: list[Doc], master: dict) -> None:
     buyer = master["buyer"]["id"]
     remit = {s["id"]: s["remit_to"] for s in master["suppliers"]}
@@ -213,9 +187,7 @@ def check_business(docs: list[Doc], master: dict) -> None:
                        f"remit-to {', '.join(got)} differs from registered {expected['street']}, "
                        f"{expected['city']} {expected['state']}")
 
-        # Duplicate: same supplier, same PO, same lines as an earlier invoice. Identical invoices
-        # are legitimate only when an equal number of identical shipments was received
-        # (a partial shipment can split an order into two equal halves).
+        # Identical invoices are legitimate only with as many identical shipments
         key = (d.sender, po, tuple(sorted(lines)))
         qty_set = tuple(sorted((sku, qty) for sku, qty, _ in lines))
         allowed = max(1, ship_sets[po].count(qty_set))
@@ -251,9 +223,6 @@ def check_business(docs: list[Doc], master: dict) -> None:
             billed[po][sku] += qty
 
 
-# --------------------------------------------------------------------------------------
-# Output and scoring
-# --------------------------------------------------------------------------------------
 def primary(d: Doc) -> str:
     rules = {r for r, sev, _ in d.findings if sev in ("high", "medium")}
     return next((r for r in PRIORITY if r in rules), "")

@@ -1,12 +1,4 @@
-"""Turn decoded findings into alerts people can act on.
-
-Rules
-    - Group repeats: many documents failing for the same reason with the same partner = one alert with a count.
-    - Seven parts in every alert: title, what, why, impact, fix, owner, trace.
-    - Check before sending: an alert whose numbers contradict its own detail (a count of zero
-      next to a failed document) is held back and reported as a defect.
-    - Security-relevant alerts are copied to the security team.
-"""
+"""Group findings into tiered alerts and hold any alert that contradicts itself."""
 from __future__ import annotations
 
 import json
@@ -44,8 +36,7 @@ class Alert:
 
 
 def build_alerts(findings: list[Finding], dictionary: Dictionary) -> list[Alert]:
-    # Group by the entry a code resolves to, so a site's translator code and the pre-validation
-    # finding for the same order become one alert
+    # Group by resolved entry so two codes for one root cause become one alert
     groups: dict[tuple[str, str], list[Finding]] = {}
     for f in findings:
         groups.setdefault((f.group or dictionary.canonical(f.key), f.partner), []).append(f)

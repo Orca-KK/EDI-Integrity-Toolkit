@@ -1,4 +1,4 @@
-"""One Finding shape shared by every part of the model, plus access to the detector's loader."""
+"""Shared Finding type and access to the detector's loader."""
 from __future__ import annotations
 
 import sys
@@ -20,18 +20,7 @@ load_docs = edi_detect.load
 
 @dataclass
 class Finding:
-    """Something a person may need to act on.
-
-    key      dictionary key, '<source>:<code>' (for example 'x12:AK4:1')
-    file     file the finding is about ('' when it has no file, such as a translator log line)
-    partner  trading partner involved
-    doc_no   business document number (PO, invoice, shipment) or data key
-    detail   the specific facts of this occurrence
-    ts       when the underlying document was sent or the error was logged
-    trace    trace ID that ties the document to its acknowledgments
-    group    optional parent key: findings with the same group and partner become one alert
-             (for example every AK3/AK4 error under one rejected 997)
-    """
+    """Something a person may need to act on."""
     key: str
     file: str
     partner: str

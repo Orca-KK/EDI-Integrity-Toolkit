@@ -1,7 +1,4 @@
-"""Checks that generated EDI is structurally valid and that every label matches the data.
-
-Run from the repository root:  python -m unittest discover -s tests -v
-"""
+"""Generated EDI is structurally valid and every label matches the data."""
 import csv
 import json
 import subprocess

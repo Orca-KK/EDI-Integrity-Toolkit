@@ -1,8 +1,4 @@
-"""Tests for the SCIRM layer: pre-validation, 997 decoding, the error dictionary, alerts,
-lag measurement, the issue register, and the whole loop end to end.
-
-Run from the repository root:  python -m unittest discover -s tests -v
-"""
+"""SCIRM layer tests, including both end-to-end runs."""
 import json
 import subprocess
 import sys

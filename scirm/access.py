@@ -1,27 +1,8 @@
 #!/usr/bin/env python3
-"""
-access.py - Identity and access controls around the EDI and ERP work.
+"""Separation of duties, dormant accounts, role-based release and a hash-chained audit log.
 
-    separation of duties   no one person holds two permissions that together allow fraud
-                           (for example, changing a supplier's remit-to address and approving payment)
-    dormant privilege      privileged accounts that have not signed in within the review window
-    role-based release     only permitted roles can release held documents; security holds need a
-                           higher permission; every attempt, allowed or denied, is logged with a reason
-    audit log              append-only JSON lines, each entry chained to the previous one by a SHA-256
-                           hash, so an edited or deleted entry is detectable
-
-Access model (JSON):
-    {"permissions": {"<role>": ["<permission>", ...]},
-     "users": [{"id": "...", "roles": ["..."], "last_sign_in": "YYYY-MM-DD"}],
-     "sod_rules": [["<permission>", "<permission>", "why the pair is dangerous"], ...],
-     "privileged": ["<permission>", ...],
-     "dormant_days": 90}
-
-Usage:
-    python scirm/access.py review  --access access.json [--as-of 2026-07-07]
-    python scirm/access.py release --access access.json --log audit.jsonl --user jdoe \\
-        --item SC-0001 --tier P2 --reason "XREF added for DC-EAST"
-    python scirm/access.py verify  --log audit.jsonl
+Usage: python scirm/access.py {review,release,verify} --help
+Example access model: the access.json written by scirm/cases.py.
 """
 from __future__ import annotations
 
@@ -37,9 +18,6 @@ GENESIS = "0" * 64
 SECURITY_TIERS = ("P1",)
 
 
-# --------------------------------------------------------------------------------------
-# Access review
-# --------------------------------------------------------------------------------------
 def permissions_of(user: dict, model: dict) -> set[str]:
     perms = set()
     for role in user.get("roles", []):
@@ -66,9 +44,6 @@ def review(model: dict, as_of: date | None = None) -> list[Finding]:
     return out
 
 
-# --------------------------------------------------------------------------------------
-# Audit log
-# --------------------------------------------------------------------------------------
 def _digest(entry: dict) -> str:
     body = {k: v for k, v in entry.items() if k != "hash"}
     return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
@@ -105,9 +80,6 @@ def verify(log: Path) -> list[Finding]:
     return out
 
 
-# --------------------------------------------------------------------------------------
-# Role-based release and logged changes
-# --------------------------------------------------------------------------------------
 def release(model: dict, log: Path, user: str, item: str, tier: str, reason: str,
             time: str | None = None) -> bool:
     """Release a held document or alert. Security (P1) holds need 'release_security_hold'."""

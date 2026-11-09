@@ -1,13 +1,4 @@
-"""Trace IDs and lag: where does time go between a document and its acknowledgments?
-
-Pairs measured
-    any document -> its 997     matched on (original sender, GS control number) via AK1
-    850 PO       -> its 855     matched on PO number (BEG03 = BAK03)
-
-A document still inside its window at the end of the data is 'pending', not missing.
-Lag is reported as a median and a 95th percentile per partner, so one slow outlier
-does not hide in an average.
-"""
+"""Acknowledgment lag per partner (document to 997, 850 to 855) as median and 95th percentile."""
 from __future__ import annotations
 
 import statistics

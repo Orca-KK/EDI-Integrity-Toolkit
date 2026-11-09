@@ -1,9 +1,4 @@
-"""The issue register.
-
-Five fields are required when an issue is first seen, so logging an issue stays quick.
-Everything else is filled in as the root cause becomes clear. Unknown error codes found by a
-run are added automatically, once each, so nothing unexplained is silently dropped.
-"""
+"""Issue register: five required fields at intake; unknown codes are added automatically."""
 from __future__ import annotations
 
 import csv

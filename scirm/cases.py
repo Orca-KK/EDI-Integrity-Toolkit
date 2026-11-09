@@ -1,25 +1,7 @@
 #!/usr/bin/env python3
-"""
-cases.py - Write a small synthetic folder that reproduces common real-world integration failures.
+"""Write synthetic files that reproduce failure cases C1-C10 (see docs/scirm.md).
 
-The patterns come from day-to-day EDI and warehouse operations; every name, ID and value here is
-made up. Use the folder to see the whole SCIRM loop work end to end:
-
-    C1  inbound PO whose ship-to ID is zero-padded             -> prevalidation:shipto_id_format
-    C2  inbound PO whose ship-to is sent as a GLN but isn't one -> prevalidation:shipto_xref_missing
-    C3  inbound PO requesting delivery inside the lead time    -> prevalidation:delivery_date_inside_lead_time
-    C4  supplier 997 rejecting our PO (AK3/AK4 codes)           -> x12:AK5:R, x12:AK3:8, x12:AK4:1, x12:AK4:7
-    C5  supplier 997 accepted with errors (bad date)            -> x12:AK5:E, x12:AK4:8
-    C6  translator error log: a site-specific code mapped in local_codes, reported with
-        'documents: 0' although one document failed            -> decoded + flagged as a source alert defect
-    C7  translator error log: a code nobody has decoded yet     -> alert + automatic issue-register entry
-    C8  a user who can change remit-to addresses and approve payments -> iam:sod_conflict
-    C9  a privileged account unused for months                  -> iam:dormant_privileged
-    C10 an analyst tries to release a security hold; later an audit entry is edited
-                                                                -> iam:unauthorized_release, iam:audit_log_tampered
-
-Usage:
-    python scirm/cases.py --master sample/master_data.json --out cases
+Usage: python scirm/cases.py --master sample/master_data.json --out cases
 """
 from __future__ import annotations
 

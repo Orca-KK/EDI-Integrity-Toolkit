@@ -1,8 +1,4 @@
-"""Error dictionary: turn any code into its meaning, likely causes, fix steps, owner and tier.
-
-No code should reach a person without this attached. A code that is not in the dictionary is
-still returned (marked unknown) so it can be alerted on and added to the issue register.
-"""
+"""Error dictionary: code to meaning, causes, fix, owner and tier. Unknown codes are kept and flagged."""
 from __future__ import annotations
 
 import json
@@ -33,8 +29,7 @@ class Dictionary:
         data = json.loads(Path(path).read_text())
         self.tiers: dict = data["tiers"]
         self.entries: dict = data["entries"]
-        # Site overlay: maps a product's own codes (e.g. 'translator:900') onto an entry,
-        # or defines a full entry. Kept out of git because it describes a real system.
+        # Site overlay for a translator's own codes; kept out of git
         self.aliases: dict[str, str] = {}
         if local_codes:
             for key, value in json.loads(Path(local_codes).read_text()).items():

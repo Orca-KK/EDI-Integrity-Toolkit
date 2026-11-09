@@ -1,13 +1,6 @@
-"""Compare the detector with x12-doctor on the same generated datasets.
+"""Score the detector and x12-doctor on the same generated datasets. Requires x12-doctor.
 
-x12-doctor (https://github.com/Adeloi-Official/x12-doctor) is an open-source
-X12 checker that covers the same document types (850, 855, 856, 810, 997).
-Both tools are run on identical files and scored against the generator's labels.
-
-Requires: pip install x12-doctor
-
-Usage:
-    python benchmarks/compare_x12doctor.py --seeds 101-116 --anomaly-rate 0.04 --out benchmarks/comparison
+Usage: python benchmarks/compare_x12doctor.py --seeds 101-116 --anomaly-rate 0.04
 """
 
 import argparse

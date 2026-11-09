@@ -1,8 +1,4 @@
-"""Checks that the detector finds the generator's labeled anomalies with few false alarms,
-and that it catches broken envelopes.
-
-Run from the repository root:  python -m unittest discover -s tests -v
-"""
+"""Detector finds the labeled anomalies with few false alarms and catches broken envelopes."""
 import json
 import subprocess
 import sys

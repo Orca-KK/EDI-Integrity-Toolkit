@@ -1,12 +1,4 @@
-"""Read 997 functional acknowledgments and turn their codes into findings.
-
-A rejected 997 is just numbers (AK5*R*5, AK3*N1*5**8, AK4*1*66*1). This module says which segment
-and element failed and attaches the dictionary key for each code, so the decoder can explain it.
-
-    AK1  group being acknowledged       AK2  transaction set being acknowledged
-    AK3  segment error (AK304 = code)   AK4  element error (AK403 = code, AK404 = bad value)
-    AK5  transaction set status (A accepted, E accepted with errors, R rejected)
-"""
+"""Read 997 acknowledgments and turn AK3/AK4/AK5 codes into findings."""
 from __future__ import annotations
 
 from findings import Doc, Finding, el, trace_id

@@ -1,10 +1,4 @@
-"""Checks that run before transformation, so bad master data is caught at receipt, with a clear
-reason, instead of surfacing later as a coded hold.
-
-    ship-to cross-reference   is the order's ship-to location mapped to a distribution center?
-                              (with ID normalization, so zero-padding is not mistaken for a new location)
-    delivery date             is the requested date at least the agreed lead time after the order date?
-"""
+"""Checks before transformation: ship-to cross-reference and delivery date vs lead time."""
 from __future__ import annotations
 
 from datetime import date, datetime
@@ -12,9 +6,6 @@ from datetime import date, datetime
 from findings import Doc, Finding, doc_number, el, trace_id
 
 
-# --------------------------------------------------------------------------------------
-# Identifier helpers
-# --------------------------------------------------------------------------------------
 def gs1_check_digit(body: str) -> int:
     """GS1 mod-10 check digit for the digits before the check digit (GTIN, GLN, SSCC)."""
     total = sum(int(c) * (3 if i % 2 == 0 else 1) for i, c in enumerate(reversed(body)))
@@ -43,9 +34,6 @@ def normalize_id(code: str) -> str:
     return code.strip().lstrip("0") or "0"
 
 
-# --------------------------------------------------------------------------------------
-# Ship-to cross-reference
-# --------------------------------------------------------------------------------------
 def build_xref(master: dict) -> dict[str, dict]:
     """Normalized ID -> {id, qualifier, dc}. Includes the buyer's approved ship-to codes."""
     xref = {}
@@ -69,9 +57,6 @@ def check_ship_to(qualifier: str, loc_id: str, xref: dict[str, dict]) -> tuple[s
     return None, f"ship-to {loc_id} -> {hit['dc']}"
 
 
-# --------------------------------------------------------------------------------------
-# Delivery date vs lead time
-# --------------------------------------------------------------------------------------
 def business_days_between(start: date, end: date) -> int:
     days, d = 0, start
     while d < end:
@@ -89,9 +74,6 @@ def check_delivery_date(order_day: date, requested: date, lead_days: int) -> tup
     return None, ""
 
 
-# --------------------------------------------------------------------------------------
-# Run over documents
-# --------------------------------------------------------------------------------------
 def prevalidate(docs: list[Doc], master: dict) -> list[Finding]:
     """Checks every purchase order (850) that carries a ship-to (N1*ST)."""
     xref = build_xref(master)
